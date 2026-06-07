@@ -1,0 +1,502 @@
+<!--
+  ============================================================
+  A DATE — interactive flyer
+  ============================================================
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Sadia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Newsreader:ital,opsz,wght@0,6..72,300..500;1,6..72,300..500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FAF1E4;
+    --paper:#FFF8EF;
+    --ink:#2A2018;
+    --ink-soft:#5C4B3B;
+    --wine:#8A2F3F;
+    --terra:#C9603F;
+    --rose:#E6A78C;
+    --sea:#2E5C58;
+    --gold:#B8893B;
+    --line:rgba(42,32,24,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Newsreader",Georgia,serif;
+    color:var(--ink);
+    background:var(--cream);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- atmosphere ---------- */
+  .atmos{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .atmos::before{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(230,167,140,.55), transparent 60%),
+      radial-gradient(100% 70% at 85% 20%, rgba(184,137,59,.18), transparent 55%),
+      radial-gradient(120% 90% at 15% 110%, rgba(46,92,88,.30), transparent 60%),
+      linear-gradient(180deg,#FCEEDD 0%,#FAF1E4 45%,#F3E6D6 100%);
+  }
+  .atmos::after{
+    content:"";position:absolute;inset:0;opacity:.06;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  /* ---------- stage / pages ---------- */
+  .stage{position:relative;z-index:2;height:100%;overflow:hidden}
+  .page{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    padding:64px 26px 96px;
+    text-align:center;
+    opacity:0;visibility:hidden;transform:translateY(24px);
+    transition:opacity .7s ease, transform .7s ease, visibility .7s;
+    overflow-y:auto;
+  }
+  .page.active{opacity:1;visibility:visible;transform:none}
+  .inner{max-width:660px;width:100%;margin:auto}
+
+  .kicker{
+    font-family:"Fraunces",serif;font-style:italic;font-weight:400;
+    letter-spacing:.04em;color:var(--terra);
+    font-size:clamp(.95rem,3.4vw,1.15rem);margin-bottom:18px;
+  }
+  .kicker::before,.kicker::after{content:"·";margin:0 .5em;color:var(--gold)}
+
+  h1{
+    font-family:"Fraunces",serif;font-weight:500;line-height:1.02;
+    font-size:clamp(2.7rem,11vw,4.6rem);
+    letter-spacing:-.01em;color:var(--ink);
+  }
+  h1 em{font-style:italic;font-weight:400;color:var(--wine)}
+  .lede{
+    font-size:clamp(1.05rem,4vw,1.3rem);line-height:1.6;
+    color:var(--ink-soft);margin-top:22px;font-weight:300;
+  }
+
+  /* staggered entrance for active page */
+  .page.active .reveal{animation:rise .8s cubic-bezier(.2,.7,.2,1) both}
+  .page.active .reveal:nth-child(1){animation-delay:.05s}
+  .page.active .reveal:nth-child(2){animation-delay:.18s}
+  .page.active .reveal:nth-child(3){animation-delay:.31s}
+  .page.active .reveal:nth-child(4){animation-delay:.44s}
+  .page.active .reveal:nth-child(5){animation-delay:.57s}
+  .page.active .reveal:nth-child(6){animation-delay:.70s}
+  @keyframes rise{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+
+  /* ---------- page 1: letter ---------- */
+  .letter{
+    background:linear-gradient(180deg,var(--paper),#FFFCF6);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:30px 30px 34px;
+    text-align:left;margin-top:26px;
+    box-shadow:0 26px 60px -34px rgba(42,32,24,.55);
+    position:relative;overflow:hidden;
+  }
+  .letter::before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:4px;
+    background:linear-gradient(var(--terra),var(--wine));
+  }
+  .letter p{
+    font-size:clamp(1.05rem,3.8vw,1.18rem);line-height:1.72;
+    color:var(--ink);margin-bottom:16px;font-weight:300;
+  }
+  .letter p:last-child{margin-bottom:0}
+  .letter .signoff{
+    font-family:"Fraunces",serif;font-style:italic;font-weight:500;
+    color:var(--wine);font-size:clamp(1.2rem,4.6vw,1.5rem);
+    margin-top:6px;
+  }
+
+  /* ---------- page 2: photo ---------- */
+  .photo-frame{
+    margin:26px auto 4px;
+    background:#FFFCF6;
+    padding:12px 12px 16px;
+    border-radius:6px;
+    box-shadow:0 22px 50px -22px rgba(42,32,24,.6), 0 2px 0 rgba(42,32,24,.05);
+    transform:rotate(-2.2deg);
+    max-width:300px;width:78%;
+    border:1px solid rgba(42,32,24,.06);
+    transition:transform .4s ease;
+  }
+  .photo-frame:hover{transform:rotate(0deg) scale(1.02)}
+  .photo-frame img{
+    display:block;width:100%;height:auto;border-radius:3px;
+    background:#F0E6D8;
+  }
+  .photo-frame .caption{
+    font-family:"Fraunces",serif;font-style:italic;color:var(--ink-soft);
+    font-size:.92rem;text-align:center;margin-top:10px;
+  }
+
+  /* ---------- page 2: the ask ---------- */
+  .ask-wrap{margin-top:34px;display:flex;flex-direction:column;align-items:center;gap:16px}
+  .btn-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;min-height:64px}
+  button{font-family:inherit;cursor:pointer;border:none}
+  .yes{
+    font-family:"Fraunces",serif;font-weight:500;
+    background:var(--wine);color:#FFF6EE;
+    font-size:1.3rem;padding:16px 40px;border-radius:999px;
+    box-shadow:0 14px 30px -12px rgba(138,47,63,.7);
+    transition:transform .25s ease, box-shadow .25s ease, font-size .25s ease;
+  }
+  .yes:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 18px 38px -12px rgba(138,47,63,.8)}
+  .maybe{
+    background:transparent;color:var(--ink-soft);
+    font-size:1rem;padding:14px 22px;border-radius:999px;
+    border:1px solid var(--line);
+    transition:left .15s cubic-bezier(.34,1.56,.64,1), top .15s cubic-bezier(.34,1.56,.64,1), transform .15s cubic-bezier(.34,1.56,.64,1);
+    z-index:8;
+    user-select:none;
+  }
+  .ask-reply{
+    font-family:"Fraunces",serif;font-style:italic;color:var(--sea);
+    font-size:1.1rem;min-height:1.4em;opacity:0;transition:opacity .4s;
+  }
+  .ask-reply.show{opacity:1}
+  .next-cta{
+    margin-top:6px;opacity:0;pointer-events:none;transform:translateY(8px);
+    transition:opacity .5s ease, transform .5s ease;
+  }
+  .next-cta.show{opacity:1;pointer-events:auto;transform:none}
+  .link-btn{
+    background:none;color:var(--terra);font-size:1.05rem;
+    font-family:"Fraunces",serif;font-style:italic;
+    border-bottom:1.5px solid var(--terra);border-radius:0;padding:2px 2px;
+  }
+
+  /* ---------- page 3: itinerary ---------- */
+  .timeline{margin-top:30px;text-align:left;position:relative}
+  .stop{
+    display:flex;gap:18px;align-items:flex-start;
+    padding-bottom:30px;position:relative;
+  }
+  .stop:not(:last-child)::before{
+    content:"";position:absolute;left:19px;top:42px;bottom:-2px;width:2px;
+    background:linear-gradient(var(--rose),var(--sea));
+  }
+  .marker{
+    flex:0 0 40px;height:40px;border-radius:50%;
+    background:var(--paper);border:2px solid var(--terra);
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Fraunces",serif;font-weight:600;color:var(--wine);
+    font-size:1.05rem;z-index:1;box-shadow:0 6px 16px -8px rgba(42,32,24,.4);
+  }
+  .stop-card{
+    flex:1;background:var(--paper);border:1px solid var(--line);
+    border-radius:16px;padding:16px 18px;
+    box-shadow:0 16px 36px -30px rgba(42,32,24,.5);
+    transition:transform .3s ease, box-shadow .3s ease;
+  }
+  .stop-card:hover{transform:translateY(-4px);box-shadow:0 22px 44px -26px rgba(42,32,24,.55)}
+  .stop-head{display:flex;align-items:center;gap:10px;margin:3px 0 4px}
+  .stop-icon{flex:0 0 26px;width:26px;height:26px;color:var(--terra)}
+  .stop-icon svg{width:100%;height:100%;display:block}
+  .stop-card .when{font-family:"Fraunces",serif;font-style:italic;color:var(--terra);font-size:.92rem}
+  .stop-card h3{font-family:"Fraunces",serif;font-weight:600;font-size:1.3rem;color:var(--ink);margin:0}
+
+  .flourish{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:18px;color:var(--gold)}
+  .flourish .ln{height:1px;width:54px;background:linear-gradient(90deg,transparent,var(--gold))}
+  .flourish .ln.r{background:linear-gradient(90deg,var(--gold),transparent)}
+  .flourish svg{width:26px;height:26px}
+  .stop-card .desc{font-size:1.02rem;line-height:1.5;color:var(--ink-soft);font-weight:300}
+  .stop-card .meta{font-size:.82rem;color:#9b8772;margin-top:8px;display:block;font-style:italic}
+  .map-link{
+    display:inline-block;margin-top:10px;font-size:.9rem;
+    color:var(--sea);border-bottom:1px solid var(--sea);
+    text-decoration:none;font-family:"Fraunces",serif;font-style:italic;
+  }
+  .map-link:hover{color:var(--wine);border-color:var(--wine)}
+  .closer{
+    margin-top:26px;font-family:"Fraunces",serif;font-style:italic;
+    font-size:1.15rem;color:var(--wine);line-height:1.5;
+  }
+
+  /* ---------- nav ---------- */
+  .nav{
+    position:fixed;bottom:22px;left:0;right:0;z-index:6;
+    display:flex;align-items:center;justify-content:center;gap:20px;
+  }
+  .dots{display:flex;gap:9px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--line);transition:all .35s}
+  .dot.on{background:var(--wine);transform:scale(1.35)}
+  .arrow{
+    background:var(--paper);border:1px solid var(--line);
+    width:46px;height:46px;border-radius:50%;font-size:1.2rem;color:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 10px 24px -14px rgba(42,32,24,.5);
+    transition:transform .2s,opacity .25s;
+  }
+  .arrow:hover{transform:translateY(-2px)}
+  .arrow:disabled{opacity:.3;cursor:default;transform:none}
+
+  /* floating hearts */
+  .heart{position:fixed;z-index:5;font-size:22px;pointer-events:none;
+    animation:floatUp 2.6s ease-out forwards;will-change:transform,opacity}
+  @keyframes floatUp{
+    0%{opacity:0;transform:translateY(0) scale(.6)}
+    15%{opacity:1}
+    100%{opacity:0;transform:translateY(-220px) scale(1.1) rotate(var(--r))}
+  }
+  @media (max-width:480px){
+    .page{padding:54px 20px 100px}
+    .nav{gap:14px}
+  }
+</style>
+</head>
+<body>
+<div class="atmos"></div>
+
+<div class="stage">
+
+  <!-- ============ PAGE 1 — LETTER ============ -->
+  <section class="page active" data-page="0">
+    <div class="inner">
+      <span class="kicker reveal">before anything else</span>
+      <h1 class="reveal">A few <em>words</em>,<br>from my heart</h1>
+
+      <div class="letter reveal">
+        <p>I'm so sorry. Sorry bolte bolte amr sorry r konu daam nai, apnar o maaf kore limit ami cross korsi. Every single day i make the same mistake. You gave me chance again and again, still ami is thik hoi nai.</p>
+        <p>Truly there is nothing else in my heart except you. I know I lost you. I didn't take yesterday with you for granted, honestly i thought I would be able to show you good day today. But with my own stupidity I couldn't. Please forgive me.</p>
+        <p class="signoff">I love you baby.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 2 — THE ASK ============ -->
+  <section class="page" data-page="1">
+    <div class="inner">
+      <span class="kicker reveal">so, with all that said</span>
+      <h1 class="reveal">Sadia, will you<br>go on a <em>date</em><br>with me?</h1>
+
+      <div class="photo-frame reveal">
+        <img src="photo.png" alt="us">
+        <div class="caption">us</div>
+      </div>
+
+      <p class="lede reveal">Tomorrow I wanna show you a nice day and a proper date. I can't stop thinking about you, and I realized I never want to stop making memories with you.</p>
+      <p class="lede reveal" style="margin-top:14px">So… I've planned a little adventure for us. Nothing fancy — just you, me, and a day to remember why we fell in love.</p>
+
+      <div class="ask-wrap reveal">
+        <div class="btn-row">
+          <button class="yes" id="yesBtn">Yes</button>
+          <button class="maybe" id="maybeBtn">No</button>
+        </div>
+        <div class="ask-reply" id="askReply"></div>
+        <div class="next-cta" id="nextCta">
+          <button class="link-btn" id="revealPlan">see what I planned for us →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 3 — ITINERARY ============ -->
+  <section class="page" data-page="2">
+    <div class="inner">
+      <span class="kicker reveal">tomorrow · the plan</span>
+      <h1 class="reveal">One day,<br>three <em>stops</em></h1>
+
+      <div class="flourish reveal">
+        <span class="ln"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-9.5-9A5 5 0 0 1 12 6a5 5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg>
+        <span class="ln r"></span>
+      </div>
+
+      <div class="timeline">
+        <div class="stop reveal">
+          <div class="marker">1</div>
+          <div class="stop-card">
+            <span class="when">late morning · we start full</span>
+            <div class="stop-head">
+              <span class="stop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13h16a8 8 0 0 1-16 0z"/><path d="M3 16h18"/><path d="M12 7V4M9 8c0-1 .5-1.5 1-2M15 8c0-1-.5-1.5-1-2"/></svg></span>
+              <h3>Manosalwa</h3>
+            </div>
+            <p class="desc">The Indian &amp; Pakistani buffet in Everett. We go in hungry and leave regretting nothing.</p>
+            <span class="meta">18 Norwood St, Everett · open Wed–Sun, weekend brunch buffet is the move</span>
+            <a class="map-link" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Manosalwa+Kabob+%26+Grill+18+Norwood+St+Everett+MA">open in maps →</a>
+          </div>
+        </div>
+
+        <div class="stop reveal">
+          <div class="marker">2</div>
+          <div class="stop-card">
+            <span class="when">early afternoon · a little drama</span>
+            <div class="stop-head">
+              <span class="stop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V8l2-1V4l2 1 2-2 2 2 2-1v3l2 1v13"/><path d="M4 21h16"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/></svg></span>
+              <h3>Hammond Castle</h3>
+            </div>
+            <p class="desc">A real stone castle on a cliff in Gloucester, looking out over the Atlantic. Medieval halls, an organ that fills the room, ocean through every window.</p>
+            <span class="meta">80 Hesperus Ave, Gloucester · open daily until 3:30 — so we don't dawdle over dessert</span>
+            <a class="map-link" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Hammond+Castle+Museum+80+Hesperus+Ave+Gloucester+MA">open in maps →</a>
+          </div>
+        </div>
+
+        <div class="stop reveal">
+          <div class="marker">3</div>
+          <div class="stop-card">
+            <span class="when">golden hour · the slow part</span>
+            <div class="stop-head">
+              <span class="stop-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M3 17c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3-1.5 4.5 0"/><path d="M3 21c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0 3 1.5 4.5 0"/></svg></span>
+              <h3>Wingaersheek Beach</h3>
+            </div>
+            <p class="desc">We end here. Soft sand, tide pools, the water far out at low tide. We walk until the light goes and don't talk about anything important.</p>
+            <span class="meta">Gloucester · parking fills up — I'll book it ahead so future-me doesn't panic</span>
+            <a class="map-link" target="_blank" href="https://www.google.com/maps/search/?api=1&query=Wingaersheek+Beach+Gloucester+MA">open in maps →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ---------- nav ---------- -->
+<div class="nav">
+  <button class="arrow" id="prev" aria-label="previous">‹</button>
+  <div class="dots">
+    <span class="dot on"></span><span class="dot"></span><span class="dot"></span>
+  </div>
+  <button class="arrow" id="next" aria-label="next">›</button>
+</div>
+
+<script>
+  const pages = document.querySelectorAll('.page');
+  const dots  = document.querySelectorAll('.dot');
+  const prev  = document.getElementById('prev');
+  const next  = document.getElementById('next');
+  let i = 0;
+
+  function go(n){
+    i = Math.max(0, Math.min(pages.length-1, n));
+    pages.forEach((p,idx)=>p.classList.toggle('active', idx===i));
+    dots.forEach((d,idx)=>d.classList.toggle('on', idx===i));
+    prev.disabled = i===0;
+    next.disabled = i===pages.length-1;
+  }
+  prev.addEventListener('click', ()=>go(i-1));
+  next.addEventListener('click', ()=>go(i+1));
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowRight') go(i+1);
+    if(e.key==='ArrowLeft')  go(i-1);
+  });
+  let x0=null;
+  document.addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});
+  document.addEventListener('touchend',e=>{
+    if(x0===null)return;
+    const dx=e.changedTouches[0].clientX-x0;
+    if(Math.abs(dx)>55){ dx<0 ? go(i+1) : go(i-1); }
+    x0=null;
+  });
+
+  /* ----- page 2 interactions ----- */
+  const yesBtn   = document.getElementById('yesBtn');
+  const maybeBtn = document.getElementById('maybeBtn');
+  const reply    = document.getElementById('askReply');
+  const nextCta  = document.getElementById('nextCta');
+
+  let runs = 0;
+  let isFixed = false;
+  const taunts = [
+    "nope 🏃",
+    "not a chance!!",
+    "too slow 😂",
+    "lmaoo still no",
+    "can't catch me",
+    "never ever ever",
+    "babe just say YES",
+    "the button said no to itself",
+    "it's a yes and you know it 💕"
+  ];
+
+  function dodge(e){
+    if(e) e.preventDefault();
+
+    if(!isFixed){
+      const rect = maybeBtn.getBoundingClientRect();
+      // reparent to body so no ancestor overflow:hidden can clip it
+      document.body.appendChild(maybeBtn);
+      Object.assign(maybeBtn.style, {
+        position: 'fixed',
+        left:   rect.left  + 'px',
+        top:    rect.top   + 'px',
+        width:  rect.width + 'px',
+        margin: '0',
+      });
+      maybeBtn.getBoundingClientRect(); // force reflow before transition kicks in
+      isFixed = true;
+    }
+
+    const cx = e?.clientX ?? (e?.touches?.[0]?.clientX ?? window.innerWidth / 2);
+    const cy = e?.clientY ?? (e?.touches?.[0]?.clientY ?? window.innerHeight / 2);
+    const pad = 24;
+    const vw  = document.documentElement.clientWidth;
+    const vh  = document.documentElement.clientHeight;
+    const bw  = maybeBtn.offsetWidth  || 100;
+    const bh  = maybeBtn.offsetHeight || 44;
+    const maxX = vw - bw - pad;
+    const maxY = vh - bh - pad;
+
+    let bestX = pad, bestY = pad, bestDist = 0;
+    for(let t = 0; t < 12; t++){
+      const tx = pad + Math.random() * Math.max(0, maxX - pad);
+      const ty = pad + Math.random() * Math.max(0, maxY - pad);
+      const dist = Math.hypot(tx + bw/2 - cx, ty + bh/2 - cy);
+      if(dist > bestDist){ bestDist = dist; bestX = tx; bestY = ty; }
+    }
+
+    // hard clamp — guaranteed to stay on screen
+    bestX = Math.max(pad, Math.min(bestX, maxX));
+    bestY = Math.max(pad, Math.min(bestY, maxY));
+
+    maybeBtn.style.left = bestX + 'px';
+    maybeBtn.style.top  = bestY + 'px';
+    maybeBtn.style.transform = `rotate(${(Math.random()-.5)*22}deg) scale(${Math.max(.7, 1 - runs*.03)})`;
+    maybeBtn.textContent = taunts[Math.min(runs, taunts.length - 1)];
+    runs++;
+  }
+
+  maybeBtn.addEventListener('mouseenter', dodge);
+  maybeBtn.addEventListener('touchstart', dodge, {passive:false});
+  maybeBtn.addEventListener('click', dodge);
+
+  function sayYes(e){
+    reply.textContent = "thank you. I love you, always.";
+    reply.classList.add('show');
+    nextCta.classList.add('show');
+    burstHearts(e ? e.clientX : window.innerWidth/2, e ? e.clientY : window.innerHeight/2);
+  }
+  yesBtn.addEventListener('click', sayYes);
+  document.getElementById('revealPlan').addEventListener('click', ()=>go(2));
+
+  function burstHearts(cx, cy){
+    const chars=['❤','♥','❤︎','✦'];
+    for(let k=0;k<16;k++){
+      const h=document.createElement('div');
+      h.className='heart';
+      h.textContent=chars[Math.floor(Math.random()*chars.length)];
+      const spread=(Math.random()-.5)*260;
+      h.style.left=(cx+spread)+'px';
+      h.style.top=(cy-10)+'px';
+      h.style.color = Math.random()>.5 ? '#8A2F3F' : '#C9603F';
+      h.style.fontSize=(16+Math.random()*18)+'px';
+      h.style.setProperty('--r',((Math.random()-.5)*60)+'deg');
+      h.style.animationDelay=(Math.random()*.25)+'s';
+      document.body.appendChild(h);
+      setTimeout(()=>h.remove(),2900);
+    }
+  }
+
+  go(0);
+</script>
+</body>
+</html>
